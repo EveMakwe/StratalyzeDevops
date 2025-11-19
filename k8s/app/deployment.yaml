@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: coffee-queue-app
+  namespace: coffee-queue
   labels:
     app: coffee-queue-app
 spec:
@@ -19,9 +20,18 @@ spec:
       labels:
         app: coffee-queue-app
     spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
       initContainers:
       - name: wait-for-postgres
-        image: postgres:15-alpine
+        image: postgres:15.8-alpine@sha256:36eb766ee83ebc0be84cde4b0a6c6f1e3a0d70b5c46c4ac5b45c7c6e5f6c1d2f
+        imagePullPolicy: Always
         command: ['sh', '-c']
         args:
         - |
@@ -30,10 +40,25 @@ spec:
             sleep 2
           done
           echo "PostgreSQL is ready!"
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 10001
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+              - ALL
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
       containers:
       - name: coffee-queue-app
-        image: stratalyzedevops-app:latest
-        imagePullPolicy: Never
+        image: stratalyzedevops-app:v1.0.0
+        imagePullPolicy: Always
         ports:
         - containerPort: 8080
         env:
@@ -52,6 +77,14 @@ spec:
             secretKeyRef:
               name: app-secret
               key: SPRING_DATASOURCE_PASSWORD
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 10001
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+              - ALL
         livenessProbe:
           httpGet:
             path: /health

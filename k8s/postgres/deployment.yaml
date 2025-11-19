@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: postgres
+  namespace: coffee-queue
   labels:
     app: postgres
 spec:
@@ -14,9 +15,18 @@ spec:
       labels:
         app: postgres
     spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10000
+        runAsGroup: 10000
+        fsGroup: 10000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
       - name: postgres
-        image: postgres:15-alpine
+        image: postgres:15.8-alpine@sha256:36eb766ee83ebc0be84cde4b0a6c6f1e3a0d70b5c46c4ac5b45c7c6e5f6c1d2f
+        imagePullPolicy: Always
         ports:
         - containerPort: 5432
         env:
@@ -37,11 +47,20 @@ spec:
               key: POSTGRES_PASSWORD
         - name: PGDATA
           value: /var/lib/postgresql/data/pgdata
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 10000
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+              - ALL
         volumeMounts:
         - name: postgres-storage
           mountPath: /var/lib/postgresql/data
         - name: postgres-init-script
           mountPath: /docker-entrypoint-initdb.d
+          readOnly: true
         livenessProbe:
           exec:
             command:
