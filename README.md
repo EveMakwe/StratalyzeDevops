@@ -2,6 +2,11 @@
 
 A complete DevOps pipeline implementation for a Spring Boot coffee ordering application with PostgreSQL backend, featuring containerization, Kubernetes orchestration, and CI/CD automation.
 
+## Documentation
+
+- [Scripts Guide](docs/SCRIPTS.md) - Complete guide to all management scripts
+- [Commands Reference](docs/COMMANDS.md) - Detailed command reference
+
 ## Architecture Overview
 
 ```
@@ -75,8 +80,8 @@ A complete DevOps pipeline implementation for a Spring Boot coffee ordering appl
 
 2. **Setup environment (Ubuntu):**
    ```bash
-   chmod +x setup.sh
-   ./setup.sh
+   chmod +x scripts/setup.sh
+   scripts/setup.sh
    # Log out and log back in for Docker group permissions
    ```
 

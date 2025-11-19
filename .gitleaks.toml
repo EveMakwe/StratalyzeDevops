@@ -1,0 +1,60 @@
+# Gitleaks configuration for detecting secrets
+# https://github.com/gitleaks/gitleaks
+
+title = "Coffee Queue Gitleaks Configuration"
+
+[extend]
+# Use default rules
+useDefault = true
+
+[[rules]]
+id = "github-token"
+description = "GitHub Token"
+regex = '''ghp_[0-9a-zA-Z]{36}'''
+tags = ["key", "github"]
+
+[[rules]]
+id = "github-oauth"
+description = "GitHub OAuth Token"
+regex = '''gho_[0-9a-zA-Z]{36}'''
+tags = ["key", "github"]
+
+[[rules]]
+id = "aws-access-key"
+description = "AWS Access Key"
+regex = '''AKIA[0-9A-Z]{16}'''
+tags = ["key", "AWS"]
+
+[[rules]]
+id = "generic-api-key"
+description = "Generic API Key"
+regex = '''(?i)(api[_-]?key|apikey)["\s:=]+["\s]*[0-9a-zA-Z\-_]{20,}'''
+tags = ["key", "API"]
+
+[[rules]]
+id = "password-in-url"
+description = "Password in URL"
+regex = '''[a-zA-Z]{3,10}://[^/\s:@]{3,20}:[^/\s:@]{3,20}@.{1,100}'''
+tags = ["password"]
+
+[[rules]]
+id = "private-key"
+description = "Private Key"
+regex = '''-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----'''
+tags = ["key", "private"]
+
+# Allowlist patterns that are safe to ignore
+[allowlist]
+description = "Allowlist for safe patterns"
+paths = [
+    '''\.md$''',  # Markdown files (for documentation examples)
+    '''target/''',  # Build artifacts
+    '''\.jar$''',  # JAR files
+]
+
+regexes = [
+    '''example\.com''',  # Example domains
+    '''localhost''',  # Local development
+    '''127\.0\.0\.1''',  # Local IP
+    '''postgres:postgres@''',  # Default local development credentials in documentation
+]

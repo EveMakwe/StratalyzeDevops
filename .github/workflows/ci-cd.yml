@@ -11,7 +11,96 @@ env:
   IMAGE_NAME: coffee-queue
 
 jobs:
+  secret-scan:
+    name: Secret Scanning
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Run Gitleaks
+      uses: gitleaks/gitleaks-action@v2
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  sast-scan:
+    name: SAST - Code Security
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Run Semgrep
+      uses: semgrep/semgrep-action@v1
+      with:
+        config: >-
+          p/security-audit
+          p/java
+          p/owasp-top-ten
+          p/dockerfile
+
+  dependency-scan:
+    name: Dependency Vulnerability Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+    
+    - name: Build application
+      working-directory: ./coffeequeue
+      run: mvn package -DskipTests
+    
+    - name: Run Trivy dependency scan
+      uses: aquasecurity/trivy-action@0.28.0
+      with:
+        scan-type: 'fs'
+        scan-ref: './coffeequeue'
+        format: 'sarif'
+        output: 'trivy-dependency-results.sarif'
+        severity: 'CRITICAL,HIGH,MEDIUM'
+    
+    - name: Upload Trivy results to GitHub Security
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: 'trivy-dependency-results.sarif'
+
+  iac-scan:
+    name: Infrastructure as Code Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Run Checkov
+      uses: bridgecrewio/checkov-action@v12
+      with:
+        directory: .
+        framework: kubernetes,dockerfile
+        output_format: sarif
+        output_file_path: checkov-results.sarif
+        soft_fail: true
+    
+    - name: Upload Checkov results to GitHub Security
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: checkov-results.sarif
+
   test:
+    needs: [secret-scan, sast-scan, dependency-scan, iac-scan]
     runs-on: ubuntu-latest
     
     steps:
@@ -94,7 +183,7 @@ jobs:
           org.opencontainers.image.environment=${{ steps.env.outputs.environment }}
     
     - name: Build and push Docker image
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v6
       with:
         context: .
         file: ./coffeequeue/Dockerfile
@@ -103,6 +192,20 @@ jobs:
         labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
+    
+    - name: Run Trivy container image scan
+      uses: aquasecurity/trivy-action@0.28.0
+      with:
+        image-ref: ${{ env.REGISTRY }}/${{ github.repository }}/${{ env.IMAGE_NAME }}:${{ steps.env.outputs.tag }}
+        format: 'sarif'
+        output: 'trivy-image-results.sarif'
+        severity: 'CRITICAL,HIGH'
+    
+    - name: Upload Trivy image results to GitHub Security
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: 'trivy-image-results.sarif'
 
   deploy:
     needs: [test, build-and-push]
