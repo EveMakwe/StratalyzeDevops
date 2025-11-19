@@ -1,0 +1,56 @@
+services:
+  postgres:
+    build:
+      context: .
+      dockerfile: postgres/Dockerfile
+    image: coffee-queue-postgres:15-alpine
+    container_name: coffee-queue-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-coffeequeue}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - coffee-queue-network
+
+  app:
+    build:
+      context: ./coffeequeue
+      dockerfile: Dockerfile
+    container_name: coffee-queue-app
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-coffeequeue}
+      DATABASE_USERNAME: ${POSTGRES_USER:-postgres}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      SPRING_PROFILES_ACTIVE: docker
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - coffee-queue-network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  coffee-queue-network:
+    driver: bridge

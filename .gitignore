@@ -1,0 +1,54 @@
+# Maven
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# Java
+*.class
+*.log
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# IDE
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docker
+*.log
+
+# Kubernetes
+*.tmp
+
+# Logs
+logs/
+*.log
+
+# Spring Boot
+spring-boot-*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# Security - Prevent committing secrets
+k8s/**/secret.yaml
+.env
+.env.local
+.env.*.local
+docker-compose.override.yml
+docker-compose.local.yml

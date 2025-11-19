@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: coffee-queue
+  labels:
+    app.kubernetes.io/name: coffee-queue
+    app.kubernetes.io/instance: coffee-queue
