@@ -2,7 +2,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: postgres-init-script
-  # namespace removed to allow -n flag to control target namespace
+  namespace: coffee-queue
 data:
   createSchema.sql: |
     --

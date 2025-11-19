@@ -2,6 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: coffee-queue-service
+  namespace: coffee-queue
   labels:
     app: coffee-queue-app
 spec:
