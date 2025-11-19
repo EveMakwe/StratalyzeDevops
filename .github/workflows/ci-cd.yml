@@ -160,6 +160,7 @@ jobs:
       run: |
         echo "environment=development" >> $GITHUB_OUTPUT
         echo "tag=develop" >> $GITHUB_OUTPUT
+        echo "repository=${GITHUB_REPOSITORY,,}" >> $GITHUB_OUTPUT
     
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
@@ -175,7 +176,7 @@ jobs:
       id: meta
       uses: docker/metadata-action@v5
       with:
-        images: ${{ env.REGISTRY }}/${{ github.repository }}/${{ env.IMAGE_NAME }}
+        images: ${{ env.REGISTRY }}/${{ steps.env.outputs.repository }}/${{ env.IMAGE_NAME }}
         tags: |
           type=ref,event=branch
           type=sha,prefix=${{ steps.env.outputs.environment }}-
@@ -199,7 +200,7 @@ jobs:
     - name: Run Trivy container image scan
       uses: aquasecurity/trivy-action@0.28.0
       with:
-        image-ref: ${{ env.REGISTRY }}/${{ github.repository }}/${{ env.IMAGE_NAME }}:${{ steps.env.outputs.tag }}
+        image-ref: ${{ env.REGISTRY }}/${{ steps.env.outputs.repository }}/${{ env.IMAGE_NAME }}:${{ steps.env.outputs.tag }}
         format: 'sarif'
         output: 'trivy-image-results.sarif'
         severity: 'CRITICAL,HIGH'
