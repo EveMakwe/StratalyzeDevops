@@ -6,7 +6,10 @@ on:
     - cron: '0 2 * * *'
   workflow_dispatch:  # Allow manual triggering
   push:
-    branches: [ main, develop ]
+    branches: [ develop, 'feature/**' ]
+  pull_request:
+    branches: [ develop ]
+    types: [ opened, synchronize, reopened ]
 
 permissions:
   contents: read
@@ -65,7 +68,7 @@ jobs:
         severity: 'CRITICAL,HIGH,MEDIUM'
     
     - name: Upload Trivy dependency results
-      uses: github/codeql-action/upload-sarif@v3
+      uses: github/codeql-action/upload-sarif@v4
       if: always()
       with:
         sarif_file: 'trivy-dependency-results.sarif'
@@ -73,9 +76,9 @@ jobs:
     
     # Container Image Scanning
     - name: Build Docker image for scanning
+      working-directory: ./coffeequeue
       run: |
-        cd coffeequeue
-        docker build -t coffee-queue-scan:latest -f Dockerfile ..
+        docker build -t coffee-queue-scan:latest -f Dockerfile .
     
     - name: Run Trivy - Container Image Scan
       uses: aquasecurity/trivy-action@0.28.0
@@ -86,7 +89,7 @@ jobs:
         severity: 'CRITICAL,HIGH,MEDIUM'
     
     - name: Upload Trivy image results
-      uses: github/codeql-action/upload-sarif@v3
+      uses: github/codeql-action/upload-sarif@v4
       if: always()
       with:
         sarif_file: 'trivy-image-results.sarif'
@@ -103,7 +106,7 @@ jobs:
         soft_fail: true
     
     - name: Upload Checkov results
-      uses: github/codeql-action/upload-sarif@v3
+      uses: github/codeql-action/upload-sarif@v4
       if: always()
       with:
         sarif_file: checkov-results.sarif
