@@ -7,6 +7,11 @@ on:
     branches: [ develop ]
     types: [ opened, synchronize, reopened ]
 
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: coffee-queue
@@ -73,7 +78,8 @@ jobs:
     
     - name: Upload Trivy results to GitHub Security
       uses: github/codeql-action/upload-sarif@v4
-      if: always()
+      if: github.event_name == 'push'
+      continue-on-error: ${{ github.event_name == 'pull_request' }}
       with:
         sarif_file: 'trivy-dependency-results.sarif'
 
@@ -96,7 +102,8 @@ jobs:
     
     - name: Upload Checkov results to GitHub Security
       uses: github/codeql-action/upload-sarif@v4
-      if: always()
+      if: github.event_name == 'push'
+      continue-on-error: ${{ github.event_name == 'pull_request' }}
       with:
         sarif_file: checkov-results.sarif
 
@@ -199,7 +206,8 @@ jobs:
     
     - name: Upload Trivy image results to GitHub Security
       uses: github/codeql-action/upload-sarif@v4
-      if: always()
+      if: github.event_name == 'push'
+      continue-on-error: ${{ github.event_name == 'pull_request' }}
       with:
         sarif_file: 'trivy-image-results.sarif'
 
