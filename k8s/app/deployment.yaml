@@ -31,7 +31,7 @@ spec:
       initContainers:
       - name: wait-for-postgres
         image: postgres:15.8-alpine@sha256:36eb766ee83ebc0be84cde4b0a6c6f1e3a0d70b5c46c4ac5b45c7c6e5f6c1d2f
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         command: ['sh', '-c']
         args:
         - |
@@ -57,8 +57,8 @@ spec:
             cpu: "100m"
       containers:
       - name: coffee-queue-app
-        image: stratalyzedevops-app:v1.0.0
-        imagePullPolicy: Always
+        image: coffee-queue-app:latest
+        imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
         env:

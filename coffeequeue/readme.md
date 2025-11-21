@@ -17,7 +17,6 @@ CREATE DATABASE coffeequeue;
 
 2. Execute the SQL script `createSchema.sql` (found in the root folder of this project) to create the required tables and schema.
 
-
 ## Build and Run
 
 ### 1. Build the application
@@ -58,14 +57,12 @@ java -jar ./target/coffeequeue-0.0.1-SNAPSHOT.jar \
 ### 4. API Endpoints
 The Coffee Queue application exposes the following REST endpoints:
 
-| Endpoint           | Method | Description                                        | Request Parameters                | Example Request | Example Response |
-|-------------------|--------|----------------------------------------------------|----------------------------------|----------------|----------------|
-| /health            | GET    | Checks if the application is running              | None                             | `GET /health` | `"OK"` |
-| /order             | POST   | Creates a new coffee order for a customer         | `name` – customer’s name (String) | `POST /order?name=MickyMouse` | ```json { "id": 1, "customerName": "MickyMouse", "status": "NEW", "createdAt": "2025-10-29T10:00:00", "updatedAt": "2025-10-29T10:00:00" } ``` |
-| /status            | GET    | Retrieves all orders for a specific customer      | `name` – customer’s name (String) | `GET /status?name=MickyMouse` | ```json [ { "id": 1, "customerName": "MickyMouse", "status": "NEW", "createdAt": "2025-10-29T10:00:00", "updatedAt": "2025-10-29T10:00:00" } ] ``` |
-| /numberOfCoffees   | GET    | Returns a count of orders by status (`NEW`, `BREWING`, `DONE`) | None | `GET /numberOfCoffees` | ```json { "NEW": 2, "BREWING": 1, "DONE": 5 } ``` |
-
-
+| Endpoint | Method | Description | Request Parameters | Example Request | Example Response |
+|----------|--------|-------------|--------------------|-----------------|------------------|
+| /health | GET | Checks if the application is running | None | `GET /health` | `"OK"` |
+| /order | POST | Creates a new coffee order for a customer | `name` – customer’s name (String) | `POST /order?name=MickyMouse` | ```json { "id": 1, "customerName": "MickyMouse", "status": "NEW", "createdAt": "2025-10-29T10:00:00", "updatedAt": "2025-10-29T10:00:00" } ``` |
+| /status | GET | Retrieves all orders for a specific customer | `name` – customer’s name (String) | `GET /status?name=MickyMouse` | ```json [ { "id": 1, "customerName": "MickyMouse", "status": "NEW", "createdAt": "2025-10-29T10:00:00", "updatedAt": "2025-10-29T10:00:00" } ] ``` |
+| /numberOfCoffees | GET | Returns a count of orders by status (`NEW`, `BREWING`, `DONE`) | None | `GET /numberOfCoffees` | ```json { "NEW": 2, "BREWING": 1, "DONE": 5 } ``` |
 
 ### 5. Notes
 Order Processing: Orders will automatically transition from NEW → BREWING → DONE at scheduled intervals:

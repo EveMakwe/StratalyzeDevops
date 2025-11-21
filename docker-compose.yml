@@ -26,6 +26,7 @@ services:
     build:
       context: ./coffeequeue
       dockerfile: Dockerfile
+    image: coffee-queue-app:latest
     container_name: coffee-queue-app
     environment:
       DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-coffeequeue}
