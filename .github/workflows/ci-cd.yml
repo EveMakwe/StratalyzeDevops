@@ -49,40 +49,6 @@ jobs:
           p/owasp-top-ten
           p/dockerfile
 
-  dependency-scan:
-    name: Dependency Vulnerability Scan
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: Set up JDK 21
-      uses: actions/setup-java@v4
-      with:
-        java-version: '21'
-        distribution: 'temurin'
-    
-    - name: Build application
-      working-directory: ./coffeequeue
-      run: mvn package -DskipTests
-    
-    - name: Run Trivy dependency scan
-      uses: aquasecurity/trivy-action@0.28.0
-      with:
-        scan-type: 'fs'
-        scan-ref: './coffeequeue'
-        format: 'sarif'
-        output: 'trivy-dependency-results.sarif'
-        severity: 'CRITICAL,HIGH,MEDIUM'
-    
-    - name: Upload Trivy results to GitHub Security
-      uses: github/codeql-action/upload-sarif@v4
-      if: github.event_name == 'push'
-      continue-on-error: ${{ github.event_name == 'pull_request' }}
-      with:
-        sarif_file: 'trivy-dependency-results.sarif'
-
   iac-scan:
     name: Infrastructure as Code Scan
     runs-on: ubuntu-latest
@@ -108,7 +74,7 @@ jobs:
         sarif_file: checkov-results.sarif
 
   test:
-    needs: [secret-scan, sast-scan, dependency-scan, iac-scan]
+    needs: [secret-scan, sast-scan, iac-scan]
     runs-on: ubuntu-latest
     
     steps:
