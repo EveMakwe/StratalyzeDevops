@@ -45,6 +45,29 @@ spec:
               key: POSTGRES_PASSWORD
         - name: PGDATA
           value: /var/lib/postgresql/data/pgdata
+        # Performance tuning
+        - name: POSTGRES_SHARED_BUFFERS
+          value: "128MB"
+        - name: POSTGRES_EFFECTIVE_CACHE_SIZE
+          value: "256MB"
+        - name: POSTGRES_MAINTENANCE_WORK_MEM
+          value: "64MB"
+        - name: POSTGRES_CHECKPOINT_COMPLETION_TARGET
+          value: "0.9"
+        - name: POSTGRES_WAL_BUFFERS
+          value: "16MB"
+        - name: POSTGRES_DEFAULT_STATISTICS_TARGET
+          value: "100"
+        - name: POSTGRES_RANDOM_PAGE_COST
+          value: "1.1"
+        - name: POSTGRES_EFFECTIVE_IO_CONCURRENCY
+          value: "200"
+        - name: POSTGRES_WORK_MEM
+          value: "4MB"
+        - name: POSTGRES_MIN_WAL_SIZE
+          value: "1GB"
+        - name: POSTGRES_MAX_WAL_SIZE
+          value: "4GB"
         securityContext:
           allowPrivilegeEscalation: false
           readOnlyRootFilesystem: false
