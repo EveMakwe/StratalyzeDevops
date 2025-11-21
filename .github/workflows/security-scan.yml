@@ -31,14 +31,13 @@ jobs:
       with:
         java-version: '21'
         distribution: 'temurin'
-    
-    # Secret Scanning
+
     - name: Run Gitleaks - Secret Detection
       uses: gitleaks/gitleaks-action@v2
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     
-    # Static Application Security Testing
+    #
     - name: Run Semgrep - Code Security Analysis
       uses: semgrep/semgrep-action@v1
       with:
@@ -51,12 +50,12 @@ jobs:
           p/kubernetes
       continue-on-error: true
     
-    # Build for dependency analysis
+   
     - name: Build application
       working-directory: ./coffeequeue
       run: mvn package -DskipTests
     
-    # Dependency Vulnerability Scanning
+  
     - name: Run Trivy - Dependency Scan
       uses: aquasecurity/trivy-action@0.28.0
       with:
@@ -64,7 +63,7 @@ jobs:
         scan-ref: './coffeequeue'
         severity: 'CRITICAL,HIGH,MEDIUM'
     
-    # Container Image Scanning
+   
     - name: Build Docker image for scanning
       working-directory: ./coffeequeue
       run: |
@@ -75,8 +74,7 @@ jobs:
       with:
         image-ref: 'coffee-queue-scan:latest'
         severity: 'CRITICAL,HIGH,MEDIUM'
-    
-    # Infrastructure as Code Scanning
+
     - name: Run Checkov - IaC Security
       uses: bridgecrewio/checkov-action@v12
       with:
@@ -84,14 +82,14 @@ jobs:
         framework: kubernetes,dockerfile
         soft_fail: true
     
-    # License Compliance
+
     - name: Check licenses
       working-directory: ./coffeequeue
       run: |
         echo "Checking dependency licenses..."
         mvn license:add-third-party || true
     
-    # Generate Security Report
+    
     - name: Generate security summary
       if: always()
       run: |

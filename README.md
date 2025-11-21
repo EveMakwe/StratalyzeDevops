@@ -11,7 +11,8 @@ A Spring Boot coffee ordering service with PostgreSQL. Containerized with Docker
 6. Scripts
 7. API
 8. Troubleshooting
-9. Improvements
+
+
 
 ## 1. Architecture
 - Spring Boot (Java 21)
@@ -46,17 +47,17 @@ kubectl apply -f k8s/app/
 kubectl get pods -n coffee-queue
 kubectl port-forward service/coffee-queue-service 8080:8080 -n coffee-queue
 ```
-HPA (k8s/app/hpa.yaml) active only if metrics-server is installed.
+HPA (Horizontal Pod Autoscaler) active only if metrics-server is installed.
 
 ## 4. CI/CD
 | Workflow | File | Trigger |
 |----------|------|---------|
-| Build & Test | .github/workflows/ci-cd.yml | Push / PR (develop, feature) |
-| Security Scan | .github/workflows/security-scan.yml | Schedule / manual |
-| Deploy Dev | .github/workflows/deploy-dev.yml | PR label deploy-app / manual (namespace: coffee-queue) |
-| Deploy Prod | .github/workflows/deploy-prod.yml | PR label deploy-app / manual (namespace: coffee-queue) |
+| Build & Test | .github/workflows/ci-cd.yml | Push / PR (develop, feature branches) |
+| Security Scan | .github/workflows/security-scan.yml | Daily schedule / manual trigger |
+| Deploy Dev | .github/workflows/deploy-dev.yml | Push to develop / PR with deploy-app label |
+| Deploy Prod | .github/workflows/deploy-prod.yml | Push to main / PR with deploy-app label |
 
-CodeQL removed. SARIF uploads removed.
+All deployments use namespace: coffee-queue
 
 ## 5. Secrets
 Never commit real secrets.
@@ -110,13 +111,5 @@ kubectl create secret generic postgres-secret \
 | DB errors | kubectl logs -l app=postgres -n coffee-queue |
 | HPA no scale | metrics-server required |
 | Missing secret | kubectl get secrets -n coffee-queue |
-
-## 9. Improvements
-- Ingress + TLS
-- External secret manager
-- DB migrations (Flyway/Liquibase)
-- Observability stack
-- Namespace per environment
-- GitOps (ArgoCD / Flux)
 
 

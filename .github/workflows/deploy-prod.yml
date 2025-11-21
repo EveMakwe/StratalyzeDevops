@@ -1,4 +1,4 @@
-name: Deploy to Production
+name: Deploy to Productiond
 
 on:
   push:
@@ -79,11 +79,11 @@ jobs:
           echo "Attempt $((RETRIES + 1))/$MAX_RETRIES: Waiting for PostgreSQL..."
           
           if kubectl wait --for=condition=available --timeout=120s deployment/postgres -n ${{ env.NAMESPACE }}; then
-            echo "✅ PostgreSQL is ready!"
+            echo "PostgreSQL is ready!"
             exit 0
           fi
           
-          echo "⚠️  PostgreSQL not ready yet. Checking status..."
+          echo "PostgreSQL not ready yet. Checking status..."
           kubectl get pods -l app=postgres -n ${{ env.NAMESPACE }}
           kubectl describe pod -l app=postgres -n ${{ env.NAMESPACE }} | tail -30
           kubectl logs -l app=postgres -n ${{ env.NAMESPACE }} --tail=30 || true
@@ -95,7 +95,7 @@ jobs:
           fi
         done
         
-        echo "❌ PostgreSQL failed to become ready after $MAX_RETRIES attempts"
+        echo "PostgreSQL failed to become ready after $MAX_RETRIES attempts"
         exit 1
     
     - name: Create application secrets
@@ -130,11 +130,11 @@ jobs:
           kubectl get pods -l app=coffee-queue-app -n ${{ env.NAMESPACE }}
           
           if kubectl wait --for=condition=available --timeout=120s deployment/coffee-queue-app -n ${{ env.NAMESPACE }}; then
-            echo "✅ Application is ready!"
+            echo "Application is ready!"
             exit 0
           fi
           
-          echo "⚠️  Application not ready yet. Diagnosing..."
+          echo "Application not ready yet. Diagnosing..."
           kubectl describe pod -l app=coffee-queue-app -n ${{ env.NAMESPACE }} | grep -A 20 "Events:" || true
           
           for pod in $(kubectl get pods -l app=coffee-queue-app -n ${{ env.NAMESPACE }} -o name); do
@@ -151,7 +151,7 @@ jobs:
           fi
         done
         
-        echo "❌ Application failed to become ready after $MAX_RETRIES attempts"
+        echo "Application failed to become ready after $MAX_RETRIES attempts"
         exit 1
     
     - name: Run smoke tests
