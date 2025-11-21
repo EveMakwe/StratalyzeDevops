@@ -30,12 +30,12 @@ spec:
           type: RuntimeDefault
       initContainers:
       - name: wait-for-postgres
-        image: postgres:15.8-alpine@sha256:36eb766ee83ebc0be84cde4b0a6c6f1e3a0d70b5c46c4ac5b45c7c6e5f6c1d2f
+        image: busybox:1.36
         imagePullPolicy: IfNotPresent
         command: ['sh', '-c']
         args:
         - |
-          until pg_isready -h postgres-service -p 5432; do
+          until nc -z postgres-service 5432; do
             echo "Waiting for PostgreSQL to be ready..."
             sleep 2
           done

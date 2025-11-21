@@ -51,6 +51,11 @@ spec:
           capabilities:
             drop:
               - ALL
+            add:
+              - CHOWN
+              - FOWNER
+              - SETGID
+              - SETUID
         volumeMounts:
         - name: postgres-storage
           mountPath: /var/lib/postgresql/data
