@@ -1,4 +1,4 @@
-name: Deploy to Production
+name: Deploy to Productiond
 
 on:
   push:
@@ -32,10 +32,15 @@ jobs:
       uses: helm/kind-action@v1.8.0
       with:
         cluster_name: coffee-queue-prod-cluster
+        wait: 30s
     
-    - name: Build Docker image
+    - name: Build Docker image with cache
       run: |
-        docker build -t coffee-queue-app:latest ./coffeequeue
+        docker build \
+          --cache-from coffee-queue-app:latest \
+          --build-arg BUILDKIT_INLINE_CACHE=1 \
+          -t coffee-queue-app:latest \
+          ./coffeequeue
     
     - name: Load Docker image to Kind
       run: |
@@ -61,15 +66,37 @@ jobs:
     
     - name: Deploy PostgreSQL
       run: |
-        kubectl apply -f k8s/postgres/configmap.yaml -n ${{ env.NAMESPACE }}
-        kubectl apply -f k8s/postgres/pvc.yaml -n ${{ env.NAMESPACE }}
-        kubectl apply -f k8s/postgres/deployment.yaml -n ${{ env.NAMESPACE }}
-        kubectl apply -f k8s/postgres/service.yaml -n ${{ env.NAMESPACE }}
+        kubectl apply -f k8s/postgres/ -n ${{ env.NAMESPACE }}
+        echo "PostgreSQL resources applied"
     
-    - name: Wait for PostgreSQL
+    - name: Wait for PostgreSQL with retries
       run: |
-        kubectl wait --for=condition=available --timeout=300s deployment/postgres -n ${{ env.NAMESPACE }}
-        echo "PostgreSQL is ready"
+        set +e
+        RETRIES=0
+        MAX_RETRIES=3
+        
+        while [ $RETRIES -lt $MAX_RETRIES ]; do
+          echo "Attempt $((RETRIES + 1))/$MAX_RETRIES: Waiting for PostgreSQL..."
+          
+          if kubectl wait --for=condition=available --timeout=120s deployment/postgres -n ${{ env.NAMESPACE }}; then
+            echo "PostgreSQL is ready!"
+            exit 0
+          fi
+          
+          echo "PostgreSQL not ready yet. Checking status..."
+          kubectl get pods -l app=postgres -n ${{ env.NAMESPACE }}
+          kubectl describe pod -l app=postgres -n ${{ env.NAMESPACE }} | tail -30
+          kubectl logs -l app=postgres -n ${{ env.NAMESPACE }} --tail=30 || true
+          
+          RETRIES=$((RETRIES + 1))
+          if [ $RETRIES -lt $MAX_RETRIES ]; then
+            echo "Retrying in 10 seconds..."
+            sleep 10
+          fi
+        done
+        
+        echo "PostgreSQL failed to become ready after $MAX_RETRIES attempts"
+        exit 1
     
     - name: Create application secrets
       env:
@@ -89,13 +116,46 @@ jobs:
         kubectl apply -f k8s/app/deployment.yaml -n ${{ env.NAMESPACE }}
         kubectl apply -f k8s/app/service.yaml -n ${{ env.NAMESPACE }}
         kubectl apply -f k8s/app/hpa.yaml -n ${{ env.NAMESPACE }}
+        echo "Application resources applied"
     
-    - name: Wait for Application
+    - name: Wait for Application with retries
       run: |
-        kubectl wait --for=condition=available --timeout=300s deployment/coffee-queue-app -n ${{ env.NAMESPACE }}
-        echo "Application deployed successfully"
+        set +e
+        RETRIES=0
+        MAX_RETRIES=3
+        
+        while [ $RETRIES -lt $MAX_RETRIES ]; do
+          echo "Attempt $((RETRIES + 1))/$MAX_RETRIES: Waiting for Application..."
+          
+          kubectl get pods -l app=coffee-queue-app -n ${{ env.NAMESPACE }}
+          
+          if kubectl wait --for=condition=available --timeout=120s deployment/coffee-queue-app -n ${{ env.NAMESPACE }}; then
+            echo "Application is ready!"
+            exit 0
+          fi
+          
+          echo "Application not ready yet. Diagnosing..."
+          kubectl describe pod -l app=coffee-queue-app -n ${{ env.NAMESPACE }} | grep -A 20 "Events:" || true
+          
+          for pod in $(kubectl get pods -l app=coffee-queue-app -n ${{ env.NAMESPACE }} -o name); do
+            echo "--- Logs from $pod (init container) ---"
+            kubectl logs $pod -c wait-for-postgres -n ${{ env.NAMESPACE }} --tail=20 || true
+            echo "--- Logs from $pod (main container) ---"
+            kubectl logs $pod -c coffee-queue-app -n ${{ env.NAMESPACE }} --tail=50 || true
+          done
+          
+          RETRIES=$((RETRIES + 1))
+          if [ $RETRIES -lt $MAX_RETRIES ]; then
+            echo "Retrying in 15 seconds..."
+            sleep 15
+          fi
+        done
+        
+        echo "Application failed to become ready after $MAX_RETRIES attempts"
+        exit 1
     
     - name: Run smoke tests
+      timeout-minutes: 2
       run: |
         kubectl port-forward service/coffee-queue-service 8080:8080 -n ${{ env.NAMESPACE }} &
         PORT_FORWARD_PID=$!

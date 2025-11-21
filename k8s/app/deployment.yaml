@@ -61,6 +61,8 @@ spec:
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8080
+          name: http
+          protocol: TCP
         env:
         - name: SPRING_DATASOURCE_URL
           valueFrom:
@@ -77,6 +79,9 @@ spec:
             secretKeyRef:
               name: app-secret
               key: SPRING_DATASOURCE_PASSWORD
+        # JVM memory settings for container
+        - name: JAVA_OPTS
+          value: "-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
         securityContext:
           runAsNonRoot: true
           runAsUser: 10001
@@ -85,11 +90,20 @@ spec:
           capabilities:
             drop:
               - ALL
+        startupProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          successThreshold: 1
+          failureThreshold: 12
         livenessProbe:
           httpGet:
             path: /health
-            port: 8080
-          initialDelaySeconds: 60
+            port: http
+          initialDelaySeconds: 0
           periodSeconds: 10
           timeoutSeconds: 5
           successThreshold: 1
@@ -97,16 +111,16 @@ spec:
         readinessProbe:
           httpGet:
             path: /health
-            port: 8080
-          initialDelaySeconds: 30
+            port: http
+          initialDelaySeconds: 0
           periodSeconds: 5
           timeoutSeconds: 3
           successThreshold: 1
           failureThreshold: 3
         resources:
           requests:
-            memory: "512Mi"
-            cpu: "500m"
+            memory: "384Mi"
+            cpu: "250m"
           limits:
-            memory: "1Gi"
-            cpu: "1000m"
+            memory: "768Mi"
+            cpu: "500m"
