@@ -7,7 +7,7 @@ on:
 
 
 env:
-  NAMESPACE: coffee-queue-prod
+  NAMESPACE: coffee-queue
 
 jobs:
   deploy-prod:
@@ -32,11 +32,11 @@ jobs:
     
     - name: Build Docker image
       run: |
-        docker build -t coffee-queue:latest ./coffeequeue
+        docker build -t coffee-queue-app:latest ./coffeequeue
     
     - name: Load Docker image to Kind
       run: |
-        kind load docker-image coffee-queue:latest --name coffee-queue-prod-cluster
+        kind load docker-image coffee-queue-app:latest --name coffee-queue-prod-cluster
     
     - name: Create production namespace
       run: |
@@ -75,9 +75,9 @@ jobs:
         POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
       run: |
         kubectl create secret generic app-secret \
-          --from-literal=DATABASE_URL="jdbc:postgresql://postgres-service:5432/$POSTGRES_DB" \
-          --from-literal=DATABASE_USERNAME="$POSTGRES_USER" \
-          --from-literal=DATABASE_PASSWORD="$POSTGRES_PASSWORD" \
+          --from-literal=SPRING_DATASOURCE_URL="jdbc:postgresql://postgres-service:5432/$POSTGRES_DB" \
+          --from-literal=SPRING_DATASOURCE_USERNAME="$POSTGRES_USER" \
+          --from-literal=SPRING_DATASOURCE_PASSWORD="$POSTGRES_PASSWORD" \
           -n ${{ env.NAMESPACE }} \
           --dry-run=client -o yaml | kubectl apply -f -
     

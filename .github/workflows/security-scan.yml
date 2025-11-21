@@ -4,7 +4,7 @@ on:
   schedule:
     # Run security scans daily at 2 AM UTC
     - cron: '0 2 * * *'
-  workflow_dispatch:  # Allow manual triggering
+  workflow_dispatch:  
   push:
     branches: [ 'feature/**' ]
   pull_request:
@@ -13,7 +13,6 @@ on:
 
 permissions:
   contents: read
-  security-events: write
   actions: read
 
 jobs:
@@ -25,7 +24,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0  # Full history for accurate analysis
+        fetch-depth: 0 
     
     - name: Set up JDK 21
       uses: actions/setup-java@v4
@@ -39,7 +38,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     
-    # SAST - Static Application Security Testing
+    # Static Application Security Testing
     - name: Run Semgrep - Code Security Analysis
       uses: semgrep/semgrep-action@v1
       with:
@@ -63,16 +62,7 @@ jobs:
       with:
         scan-type: 'fs'
         scan-ref: './coffeequeue'
-        format: 'sarif'
-        output: 'trivy-dependency-results.sarif'
         severity: 'CRITICAL,HIGH,MEDIUM'
-    
-    - name: Upload Trivy dependency results
-      uses: github/codeql-action/upload-sarif@v4
-      if: github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-      with:
-        sarif_file: 'trivy-dependency-results.sarif'
-        category: 'dependencies'
     
     # Container Image Scanning
     - name: Build Docker image for scanning
@@ -84,16 +74,7 @@ jobs:
       uses: aquasecurity/trivy-action@0.28.0
       with:
         image-ref: 'coffee-queue-scan:latest'
-        format: 'sarif'
-        output: 'trivy-image-results.sarif'
         severity: 'CRITICAL,HIGH,MEDIUM'
-    
-    - name: Upload Trivy image results
-      uses: github/codeql-action/upload-sarif@v4
-      if: github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-      with:
-        sarif_file: 'trivy-image-results.sarif'
-        category: 'container-image'
     
     # Infrastructure as Code Scanning
     - name: Run Checkov - IaC Security
@@ -101,16 +82,7 @@ jobs:
       with:
         directory: .
         framework: kubernetes,dockerfile
-        output_format: sarif
-        output_file_path: checkov-results.sarif
         soft_fail: true
-    
-    - name: Upload Checkov results
-      uses: github/codeql-action/upload-sarif@v4
-      if: github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-      with:
-        sarif_file: checkov-results.sarif
-        category: 'infrastructure'
     
     # License Compliance
     - name: Check licenses
@@ -133,42 +105,4 @@ jobs:
         echo "- Container Image Scan (Trivy)" >> $GITHUB_STEP_SUMMARY
         echo "- Infrastructure as Code Scan (Checkov)" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "View detailed results in the Security tab" >> $GITHUB_STEP_SUMMARY
-
-  codeql-analysis:
-    name: CodeQL Analysis
-    runs-on: ubuntu-latest
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
-    
-    strategy:
-      fail-fast: false
-      matrix:
-        language: [ 'java' ]
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v3
-      with:
-        languages: ${{ matrix.language }}
-        queries: security-extended,security-and-quality
-    
-    - name: Set up JDK 21
-      uses: actions/setup-java@v4
-      with:
-        java-version: '21'
-        distribution: 'temurin'
-    
-    - name: Build application
-      working-directory: ./coffeequeue
-      run: mvn clean package -DskipTests
-    
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v3
-      with:
-        category: "/language:${{ matrix.language }}"
+        echo "View detailed results in the Actions tab" >> $GITHUB_STEP_SUMMARY

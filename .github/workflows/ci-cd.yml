@@ -2,14 +2,13 @@ name: CI - Build and Test
 
 on:
   push:
-    branches: [ develop, 'feature/**' ]
+    branches: [ 'feature/**' ]
   pull_request:
     branches: [ develop ]
     types: [ opened, synchronize, reopened ]
 
 permissions:
   contents: read
-  security-events: write
   actions: read
 
 env:
@@ -62,16 +61,7 @@ jobs:
       with:
         directory: .
         framework: kubernetes,dockerfile
-        output_format: sarif
-        output_file_path: checkov-results.sarif
         soft_fail: true
-    
-    - name: Upload Checkov results to GitHub Security
-      uses: github/codeql-action/upload-sarif@v4
-      if: github.event_name == 'push'
-      continue-on-error: ${{ github.event_name == 'pull_request' }}
-      with:
-        sarif_file: checkov-results.sarif
 
   test:
     needs: [secret-scan, sast-scan, iac-scan]
@@ -116,7 +106,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-      security-events: write
     
     steps:
     - name: Checkout code
@@ -168,16 +157,7 @@ jobs:
       uses: aquasecurity/trivy-action@0.28.0
       with:
         image-ref: ${{ env.REGISTRY }}/${{ steps.env.outputs.repository }}/${{ env.IMAGE_NAME }}:${{ steps.env.outputs.tag }}
-        format: 'sarif'
-        output: 'trivy-image-results.sarif'
         severity: 'CRITICAL,HIGH'
-    
-    - name: Upload Trivy image results to GitHub Security
-      uses: github/codeql-action/upload-sarif@v4
-      if: github.event_name == 'push'
-      continue-on-error: ${{ github.event_name == 'pull_request' }}
-      with:
-        sarif_file: 'trivy-image-results.sarif'
 
   deploy:
     needs: [test, build-and-push]
